@@ -1,26 +1,73 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------
+   BLC brand tokens (ported from the prototype / brand guidelines)
+--------------------------------------------------------------------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #0b0b0c;
+  --paper: #ffffff;
+  --surface: #f4f5f7;
+  --accent: #1b7fbf;
+  --line: #e3e6ea;
+  --grey: #5b6167;
+  --red: #a3241c;
+  --green: #1f8f5f;
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --radius-card: 12px;
+  --radius-control: 8px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-accent: var(--accent);
+  --color-line: var(--line);
+  --color-grey: var(--grey);
+  --color-red: var(--red);
+  --color-green: var(--green);
+  --font-sans: "PT Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    ui-sans-serif, system-ui, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    --ink: #f4f5f7;
+    --paper: #101113;
+    --surface: #17181b;
+    --line: #2a2c30;
+    --grey: #9aa0a6;
+    --background: var(--paper);
+    --foreground: var(--ink);
   }
+}
+
+:root[data-theme="dark"] {
+  --ink: #f4f5f7;
+  --paper: #101113;
+  --surface: #17181b;
+  --line: #2a2c30;
+  --grey: #9aa0a6;
+  --background: var(--paper);
+  --foreground: var(--ink);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.control {
+  border-radius: var(--radius-control);
 }

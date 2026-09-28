@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BLC Operations Console
 
-## Getting Started
+The real, database-backed version of Bespoke London Chauffeurs' in-house
+console — replacing the single-page prototype. Deploys to
+**app.myblc.co.uk**.
 
-First, run the development server:
+See `CLAUDE.md` for how the project is organized and how to keep working
+on it cheaply with Claude Code, and `ROADMAP.md` for what's built vs.
+still to do.
+
+## One-time setup
+
+### 1. Create the Supabase project
+
+1. Go to [supabase.com](https://supabase.com) → New project.
+2. Once it's ready, open **SQL Editor** → paste the entire contents of
+   `supabase/schema.sql` → Run. This creates every table, plus row-level
+   security so only logged-in staff can read/write.
+3. Go to **Authentication → Users → Add user** and create an account for
+   yourself (and anyone else on staff) with an email + password. This is
+   how you'll log into the console — there's no public sign-up.
+4. Go to **Project Settings → API** and copy:
+   - Project URL
+   - `anon` `public` key
+
+### 2. Local development (optional, only if you want to preview changes yourself)
 
 ```bash
+cp .env.local.example .env.local
+# paste the Project URL and anon key from step 1 into .env.local
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 and sign in with the staff account you created.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Deploy to Vercel
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Go to [vercel.com](https://vercel.com) → New Project → import this
+   GitHub repository.
+2. Add the two environment variables from step 1
+   (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`) under
+   **Settings → Environment Variables**.
+3. Deploy. Vercel gives you a `*.vercel.app` URL immediately.
+4. Go to **Settings → Domains** → add `app.myblc.co.uk`. Vercel shows you
+   the DNS record to add (a CNAME, same as the GoDaddy setup you've
+   already done for the subdomain) — point it there and Vercel issues the
+   SSL certificate automatically.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+From then on, every push to the `main` branch on GitHub auto-deploys —
+that's the whole release process.
