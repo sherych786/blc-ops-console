@@ -11,7 +11,7 @@ export async function signIn(_prevState: unknown, formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    return { error: error.message };
+    return { error: error.message, email };
   }
 
   redirect("/dashboard");

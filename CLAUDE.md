@@ -13,13 +13,14 @@ Operations Console (jobs, invoicing, driver payroll), replacing the
 single-page prototype. It will be deployed to **app.myblc.co.uk**.
 
 Phase 1 only (current scope): one company, BLC's own staff logging in.
+Status: at parity with the approved prototype — see `ROADMAP.md`.
 No multi-tenancy, no billing, no public signup. That's Phase 2 — see
 `docs/PHASE-2-SAAS.md` (not started; do not build toward it yet unless
 asked).
 
 ## Stack
 
-- **Next.js 16** (App Router, TypeScript, Tailwind v4). Node's proxy
+- **Next.js 16** (App Router, TypeScript; styling is the prototype stylesheet in `globals.css`, not Tailwind classes). Node's proxy
   convention changed in v16 — the middleware file is `src/proxy.ts`
   exporting `proxy()`, not `middleware.ts`/`middleware()`. See
   `node_modules/next/dist/docs/` for anything else that looks off versus
@@ -30,44 +31,47 @@ asked).
 
 ## Where things live
 
-- `supabase/schema.sql` — the entire database schema, one file, meant to
-  be run once in the Supabase SQL editor. It already includes every table
-  the prototype needs (companies, fleet, drivers, jobs, employees,
-  shift_logs, salary_slips, invoices, issuers, etc.) so future work is
-  adding *pages*, not redesigning the data model. If a column is missing,
-  add an `alter table` migration rather than editing this file's history.
-- `src/lib/supabase/{client,server}.ts` — Supabase client factories.
-  Use `server.ts`'s `createClient()` in Server Components/Actions,
-  `client.ts`'s in Client Components. Never expose the service-role key
-  to the browser — only `NEXT_PUBLIC_SUPABASE_ANON_KEY` is public.
-- `src/app/(app)/` — everything behind login (the console itself).
-  `src/app/(app)/layout.tsx` checks auth and renders the sidebar.
-- `src/app/login/` — the sign-in page (public).
-- `src/components/Sidebar.tsx` — the nav; add a link here when you add a
-  module.
-- `src/app/globals.css` — brand tokens (colors, radii) as CSS variables,
-  light/dark aware. Reuse `.card`/`.control` classes and the `--accent`,
-  `--ink`, `--grey`, `--red`, `--green`, `--line`, `--surface` variables
-  rather than hardcoding hex colors in new components.
+- **Design reference**: the approved prototype
+  (claude.ai/artifact/6og1WfE4L5FiheUSpuX6vJ) is the spec for layout,
+  wording and behaviour. The audit workbook maps every element to code.
+- `src/app/globals.css` — the prototype's stylesheet, ported VERBATIM.
+  Components use its class names directly (`.card`, `.btn primary`,
+  `.kpi`, `.drv`, `.pill`, `.form-grid`/`.fg`, `.modal`, `.phone` …).
+  Tailwind's preflight is deliberately not loaded; don't add Tailwind
+  utility classes or hardcoded colours — reuse the classes/tokens.
+- `supabase/schema.sql` — base schema (run once). Changes go in
+  `supabase/migrations/NNN_*.sql` (idempotent, run once in the SQL
+  editor, in order). `002_prototype_parity.sql` must be applied.
+- `src/lib/` — `format.ts` (money/dates/refs, ported 1:1), `calc.ts`
+  (commission, VAT, hourly calc, shift pay — keep exact), `messages.ts`
+  (the two hand-off messages word for word + link builders), `jobs.ts`
+  (the one Supabase select for jobs), `export.ts` (xlsx/PDF/PNG in the
+  browser), `types.ts` (status vocabulary, row shapes).
+- `src/components/` — shared UI: `Sidebar`, `AppBar`, `Toast`
+  (`useToast`, `useCopy`), `JobModal`, `PhoneJob`, `PhoneDriver`,
+  `FleetProfile` (Ken-Burns carousel), `InvoiceDoc`, `SlipDoc`, `ui.tsx`.
+- `src/app/(app)/layout.tsx` — auth gate + appbar.
+  `src/app/(app)/(console)/` — every console page (sidebar layout).
+  `src/app/(app)/preview/` — the in-console phone previews.
+- Public (no login) pages: `src/app/{job,track,driver,fleet}/…`. They
+  read/write ONLY through the `public_*` SECURITY DEFINER functions in
+  the migration — RLS keeps every table closed to anonymous visitors.
+  Job links carry a secret key (`?k=` driver_key / track_key); keep it.
+  Allow-listed in `src/lib/supabase/middleware.ts`.
 
-## The pattern every module follows (see `jobs/` as the reference)
+## The pattern every module follows
 
-1. `page.tsx` (Server Component) — fetch data with the server Supabase
-   client, render it.
-2. `actions.ts` — `"use server"` functions that validate input and write
-   to Supabase, then `revalidatePath`/`redirect`.
-3. A small Client Component for the form (`useActionState` +
-   `formAction`), kept in its own file so the page itself stays a Server
-   Component.
+1. `page.tsx` (Server Component) — fetch with the server Supabase
+   client, pass plain data down.
+2. `actions.ts` — `"use server"` functions that validate, write, call
+   `revalidatePath("/", "layout")` (refreshes sidebar counts too) and
+   return `{ error? }` — no redirects.
+3. `<Module>Client.tsx` — the prototype's markup; calls the action in
+   `startTransition`, then `toast()` with the prototype's wording.
 
-Copy `src/app/(app)/jobs/` as the template for Office (Companies, Fleet,
-Chauffeurs), Invoices, and BLC Drivers (Employees, Daily Updates, Salary
-Slips) — those are currently stub pages (`src/components/ComingSoon.tsx`)
-waiting to be built this way. `ROADMAP.md` has the checklist and notes
-on what each one needs to port from the prototype (specific UI details
-like the searchable chauffeur combo, hourly pricing calc, discount line,
-PAID watermark, etc. — the prototype is the design reference for exact
-behaviour; ask the user for it if it's not attached to the session).
+Statuses: `Pending → EnRoute → At Pick Up → POB → Dropped off →
+Completed`, plus `Cancelled` (DB check constraint). Refs are issued by
+the DB: `BLC-YYYY-####`, `INV-YYYY-####`; slips `SAL-NAME-DDMMMYYYY`.
 
 ## Working on this efficiently (keeps token spend low)
 
@@ -85,6 +89,7 @@ behaviour; ask the user for it if it's not attached to the session).
 
 ## Environment
 
-Copy `.env.local.example` to `.env.local` and fill in the Supabase
-project URL + anon key for local dev. The same two variables are set in
-Vercel's project settings for the deployed app.
+`.env.local` needs `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` (the same two are set in Vercel).
+Optional: `NEXT_PUBLIC_SITE_HOST` (default `app.myblc.co.uk`) — the host
+printed in the chauffeur / tracking / driver / fleet links.

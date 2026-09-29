@@ -1,20 +1,36 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+// PT Sans (brand typeface), self-hosted via @fontsource so builds never
+// depend on reaching Google Fonts.
+import "@fontsource/pt-sans/400.css";
+import "@fontsource/pt-sans/400-italic.css";
+import "@fontsource/pt-sans/700.css";
 import "./globals.css";
-
-// Note: brand font is PT Sans. Using the system font stack for now so the
-// build never depends on reaching Google Fonts (see globals.css). Swap in
-// next/font/local with a self-hosted PT Sans file whenever you want the
-// exact brand typeface — see ROADMAP.md.
+import { ToastProvider } from "@/components/Toast";
 
 export const metadata: Metadata = {
   title: "BLC Operations Console",
   description: "Bespoke London Chauffeurs — jobs, invoicing & payroll",
+  icons: { icon: "/blc-logo.png" },
 };
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
+// Applies a manually chosen theme (see ThemeToggle) before first paint.
+const themeInit = `try{var t=localStorage.getItem("blcTheme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInit }} />
+      </head>
+      <body>
+        <ToastProvider>{children}</ToastProvider>
+      </body>
     </html>
   );
 }
