@@ -33,12 +33,13 @@ roughly in the order it's most useful to build.
 
 ## 2. Office
 
-- [ ] Companies — list/create/edit/delete (`office/companies`)
+- [x] Companies — list/create/edit/delete (`office/companies`)
 - [ ] Fleet — list/create/edit/delete, with photo/video upload to
       Supabase Storage, the gallery carousel from the prototype, pax/
       luggage fields, shareable public fleet profile page
-- [ ] Chauffeurs — list/create/edit/delete, linked to a fleet vehicle,
-      with their own shareable status-update link (`/driver/[id]`)
+- [x] Chauffeurs — list/create/edit/delete, linked to a fleet vehicle
+      (vehicle dropdown will populate once Fleet is built). Still to
+      add: their own shareable status-update link (`/driver/[id]`)
 
 ## 3. Invoices
 
