@@ -35,9 +35,10 @@ export async function updateSession(request: NextRequest) {
 
   const isPublicPath =
     request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/driver") || // public shareable driver/tracking links
-    request.nextUrl.pathname.startsWith("/track") ||
-    request.nextUrl.pathname.startsWith("/fleet"); // public shareable fleet profile links
+    request.nextUrl.pathname.startsWith("/driver/") || // BLC driver daily-update link
+    request.nextUrl.pathname.startsWith("/job/") || // chauffeur job sheet link
+    request.nextUrl.pathname.startsWith("/track/") || // company view-only tracking link
+    request.nextUrl.pathname.startsWith("/fleet/"); // public shareable fleet profile links
 
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone();
