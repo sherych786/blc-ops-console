@@ -19,6 +19,8 @@ export default async function CreateInvoicePage({ searchParams }: { searchParams
   ]);
 
   return (
+    <>
+      {jobs.error && <p className="err">Could not load jobs: {jobs.error.message}</p>}
     <InvoiceBuilder
       key={edit || n || "new"}
       today={todayISO()}
@@ -28,5 +30,6 @@ export default async function CreateInvoicePage({ searchParams }: { searchParams
       jobs={(jobs.data || []).map((j) => ({ ...j, company_price: Number(j.company_price) }))}
       editing={editing.data || null}
     />
+    </>
   );
 }

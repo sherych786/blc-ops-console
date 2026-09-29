@@ -75,8 +75,19 @@ export function InvoiceBuilder({
   // Issuer form
   const [issuerForm, setIssuerForm] = useState<null | { id: string | null; vals: Record<string, string> }>(null);
 
-  // From jobs
-  const [coId, setCoId] = useState(st?.companyId || companies[0]?.id || "");
+  // From jobs. "__direct" = jobs booked with no company ("Direct client").
+  const DIRECT = "__direct";
+  const coKey = (id: string | null) => id || DIRECT;
+  const jobCount = useMemo(() => {
+    const m: Record<string, number> = {};
+    jobs.forEach((j) => (m[coKey(j.company_id)] = (m[coKey(j.company_id)] || 0) + 1));
+    return m;
+  }, [jobs]);
+  // Open on a company that actually has jobs (the list used to start on
+  // the first company alphabetically and look empty).
+  const plural = (n: number) => `${n} job${n === 1 ? "" : "s"}`;
+  const firstWithJobs = companies.find((c) => jobCount[c.id])?.id || (jobCount[DIRECT] ? DIRECT : companies[0]?.id || DIRECT);
+  const [coId, setCoId] = useState(st ? st.companyId || (st.jobIds?.length ? DIRECT : firstWithJobs) : firstWithJobs);
   const [search, setSearch] = useState("");
   const [sel, setSel] = useState<Set<string>>(new Set(st?.jobIds || []));
   const [jobExtras, setJobExtras] = useState<Record<string, Extra[]>>(st?.jobExtras || {});
@@ -102,9 +113,9 @@ export function InvoiceBuilder({
 
   const eligible = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return jobs.filter((j) => j.company_id === coId && (!q || j.ref.toLowerCase().includes(q)));
+    return jobs.filter((j) => coKey(j.company_id) === coId && (!q || j.ref.toLowerCase().includes(q)));
   }, [jobs, coId, search]);
-  const chosen = jobs.filter((j) => sel.has(j.id) && j.company_id === coId);
+  const chosen = jobs.filter((j) => sel.has(j.id) && coKey(j.company_id) === coId);
 
   const clAir = cl.type.startsWith("Airport") || cl.type.startsWith("One");
   const clHr = cl.type.startsWith("Hourly");
@@ -215,7 +226,7 @@ export function InvoiceBuilder({
     };
     const state: InvoiceState = {
       invMode,
-      companyId: invMode === "jobs" ? coId : null,
+      companyId: invMode === "jobs" && coId !== DIRECT ? coId : null,
       customCo,
       manual,
       jobIds: invMode === "jobs" ? chosen.map((j) => j.id) : [],
@@ -351,7 +362,10 @@ export function InvoiceBuilder({
                 <h3 style={{ fontSize: 13 }}>Select company and jobs</h3>
                 <div className="tools">
                   <select className="field-mini" value={coId} onChange={(e) => { setCoId(e.target.value); setSel(new Set()); }}>
-                    {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {companies.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name} ({plural(jobCount[c.id] || 0)})</option>
+                    ))}
+                    <option value={DIRECT}>Direct client, no company ({plural(jobCount[DIRECT] || 0)})</option>
                   </select>
                   <span className="search"><input className="field-mini" placeholder="Search job ref" value={search} onChange={(e) => setSearch(e.target.value)} /></span>
                 </div>
@@ -378,7 +392,13 @@ export function InvoiceBuilder({
                     <span className="pr-amt">{money(j.company_price)}</span>
                   </label>
                 ))}
-                {!eligible.length && <div className="inv-empty">No jobs for this company match. Pick another company or clear the search.</div>}
+                {!eligible.length && (
+                  <div className="inv-empty">
+                    {jobs.length
+                      ? "No jobs for this company match. Pick another company or clear the search."
+                      : "No jobs to invoice yet. Jobs appear here once they are created (cancelled jobs are left out)."}
+                  </div>
+                )}
               </div>
               {chosen.length > 0 && (
                 <div>
