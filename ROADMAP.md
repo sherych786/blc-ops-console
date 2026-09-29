@@ -34,9 +34,11 @@ roughly in the order it's most useful to build.
 ## 2. Office
 
 - [x] Companies — list/create/edit/delete (`office/companies`)
-- [ ] Fleet — list/create/edit/delete, with photo/video upload to
-      Supabase Storage, the gallery carousel from the prototype, pax/
-      luggage fields, shareable public fleet profile page
+- [x] Fleet — list/create/edit/delete, with photo/video upload to
+      Supabase Storage, pax/luggage fields, shareable public fleet
+      profile page (`/fleet/[id]`). Still to add: the Ken-Burns
+      auto-zoom gallery carousel from the prototype (currently a plain
+      grid)
 - [x] Chauffeurs — list/create/edit/delete, linked to a fleet vehicle
       (vehicle dropdown will populate once Fleet is built). Still to
       add: their own shareable status-update link (`/driver/[id]`)

@@ -36,7 +36,8 @@ export async function updateSession(request: NextRequest) {
   const isPublicPath =
     request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/driver") || // public shareable driver/tracking links
-    request.nextUrl.pathname.startsWith("/track");
+    request.nextUrl.pathname.startsWith("/track") ||
+    request.nextUrl.pathname.startsWith("/fleet"); // public shareable fleet profile links
 
   if (!user && !isPublicPath) {
     const url = request.nextUrl.clone();
