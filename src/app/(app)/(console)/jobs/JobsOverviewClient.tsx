@@ -10,7 +10,7 @@ import { exportXlsx } from "@/lib/export";
 import { useToast } from "@/components/Toast";
 import { Pill, Kpi, EmptyRow } from "@/components/ui";
 import { JobModal } from "@/components/JobModal";
-import { cancelJob, restoreJob } from "./actions";
+import { cancelJob, restoreJob, deleteJob } from "./actions";
 
 type F = { co?: string; from?: string; to?: string; q?: string };
 
@@ -22,6 +22,7 @@ export function JobsOverviewClient({ jobs, companies, filters }: { jobs: Job[]; 
   const [search, setSearch] = useState(filters.q || "");
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState<Job | null>(null);
+  const [confirmDel, setConfirmDel] = useState<string | null>(null);
 
   function setFilter(k: keyof F, v: string) {
     const p = new URLSearchParams();
@@ -142,7 +143,7 @@ export function JobsOverviewClient({ jobs, companies, filters }: { jobs: Job[]; 
             <thead>
               <tr>
                 <th style={{ width: 34 }}><input type="checkbox" checked={allSel} onChange={(e) => toggleAll(e.target.checked)} aria-label="Select all" /></th>
-                <th>Ref</th><th>Company</th><th>Route</th><th>Chauffeur</th><th>Status</th><th>Revenue</th><th>Chauffeur</th><th>VAT</th><th>Commission</th><th />
+                <th>Ref</th><th>Company</th><th>Route</th><th>Chauffeur</th><th>Status</th><th>Revenue</th><th>Chauffeur</th><th>VAT</th><th>Commission</th><th className="col-act" />
               </tr>
             </thead>
             <tbody>
@@ -153,22 +154,44 @@ export function JobsOverviewClient({ jobs, companies, filters }: { jobs: Job[]; 
                     <td><input type="checkbox" checked={sel.has(j.id)} onChange={(e) => toggle(j.id, e.target.checked)} aria-label={"Select " + j.ref} /></td>
                     <td><button className="ref" onClick={() => setOpen(j)}>{j.ref}</button></td>
                     <td style={{ fontSize: 12.5 }}>{j.company?.name || "Direct client"}</td>
-                    <td style={{ fontSize: 12 }}>{j.pickup_location} to {j.dropoff_location}</td>
+                    <td>
+                      <div style={{ fontSize: 12, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                           title={`${j.pickup_location} → ${j.dropoff_location}`}>
+                        {j.pickup_location} → {j.dropoff_location}
+                      </div>
+                    </td>
                     <td style={{ fontSize: 12.5 }}>{j.driver?.name || "—"}</td>
                     <td><Pill status={j.status} /></td>
                     <td className="money">{money(j.company_price)}</td>
                     <td className="money">{money(chaufTotal(j))}</td>
                     <td className="money">{money(vatDue(j))}</td>
                     <td className="comm">{cx ? "—" : money(commission(j))}</td>
-                    <td>
-                      <div className="rowacts">
-                        <Link className="btn xs" href={`/jobs/new?edit=${j.id}`}>Edit</Link>
-                        {cx ? (
-                          <button className="btn xs" onClick={() => run(() => restoreJob(j.id), j.ref + " restored")}>Restore</button>
-                        ) : (
-                          <button className="btn xs danger" onClick={() => run(() => cancelJob(j.id), j.ref + " cancelled")}>Cancel</button>
-                        )}
-                      </div>
+                    <td className="col-act">
+                      {confirmDel === j.id ? (
+                        <div className="rowacts" style={{ alignItems: "center" }}>
+                          <span style={{ fontSize: 11.5, color: "var(--text-2)", whiteSpace: "nowrap" }}>Delete {j.ref}?</span>
+                          <button
+                            className="btn xs danger"
+                            onClick={() => {
+                              run(() => deleteJob(j.id), j.ref + " deleted");
+                              setConfirmDel(null);
+                            }}
+                          >
+                            Yes, delete
+                          </button>
+                          <button className="btn xs" onClick={() => setConfirmDel(null)}>No</button>
+                        </div>
+                      ) : (
+                        <div className="rowacts">
+                          <Link className="btn xs" href={`/jobs/new?edit=${j.id}`}>Edit</Link>
+                          {cx ? (
+                            <button className="btn xs" onClick={() => run(() => restoreJob(j.id), j.ref + " restored")}>Restore</button>
+                          ) : (
+                            <button className="btn xs danger" onClick={() => run(() => cancelJob(j.id), j.ref + " cancelled")}>Cancel</button>
+                          )}
+                          <button className="btn xs danger" onClick={() => setConfirmDel(j.id)}>Delete</button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );

@@ -102,6 +102,18 @@ export async function restoreJob(id: string) {
   return { error: error?.message };
 }
 
+/**
+ * Permanently delete a job.
+ * job_status_stamps cascade-deletes automatically (ON DELETE CASCADE).
+ * Any linked invoice has its job_id set to null (ON DELETE SET NULL).
+ */
+export async function deleteJob(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("jobs").delete().eq("id", id);
+  revalidatePath("/", "layout");
+  return { error: error?.message };
+}
+
 /** Preview "↺ Reset flow": clears a job's stamps back to Pending. */
 export async function resetJobFlow(id: string) {
   const supabase = await createClient();
